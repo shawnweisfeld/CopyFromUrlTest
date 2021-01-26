@@ -27,6 +27,12 @@ namespace CopyFromUrlTest
                     var config = new Config();
                     hostContext.Configuration.GetSection("Config").Bind(config);
                     config.Run = Guid.NewGuid().ToString();
+
+                    if (!config.Source.Any() && !string.IsNullOrEmpty(config.Sources))
+                    {
+                        config.Source = config.Sources.Split("|").ToList();
+                    }
+
                     services.AddSingleton(config);
 
                     services.AddSingleton<SourceService>();
