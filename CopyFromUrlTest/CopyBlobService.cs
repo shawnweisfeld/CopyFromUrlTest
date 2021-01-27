@@ -45,7 +45,7 @@ namespace CopyFromUrlTest
             using (var op = _telemetryClient.StartOperation<DependencyTelemetry>("CopyFromUri"))
             {
                 op.Telemetry.Properties.Add("Run", _config.Run);
-                op.Telemetry.Properties.Add("Number of Files", $"{sourceItems.Count}");
+                op.Telemetry.Properties.Add("Number of Files", $"{tempItems.Count}");
                 op.Telemetry.Properties.Add("Number of Cores", $"{Environment.ProcessorCount}");
                 op.Telemetry.Properties.Add("Number of Sources", $"{_sourceClients.Length}");
                 op.Telemetry.Properties.Add("Number of Threads", $"{_config.Threads}");
@@ -77,7 +77,7 @@ namespace CopyFromUrlTest
             using (var op = _telemetryClient.StartOperation<DependencyTelemetry>("CopyBytes"))
             {
                 op.Telemetry.Properties.Add("Run", _config.Run);
-                op.Telemetry.Properties.Add("Number of Files", $"{sourceItems.Count}");
+                op.Telemetry.Properties.Add("Number of Files", $"{tempItems.Count}");
                 op.Telemetry.Properties.Add("Number of Cores", $"{Environment.ProcessorCount}");
                 op.Telemetry.Properties.Add("Number of Sources", $"{_sourceClients.Length}");
                 op.Telemetry.Properties.Add("Number of Threads", $"{_config.Threads}");
