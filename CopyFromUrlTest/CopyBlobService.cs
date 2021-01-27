@@ -38,7 +38,7 @@ namespace CopyFromUrlTest
         public async Task CopyFromUri(List<SourceItem> sourceItems)
         {
             //shuffle the source lists to level the load on the source accounts
-            sourceItems.OrderBy(x => Guid.NewGuid());
+            var tempItems = sourceItems.OrderBy(x => Guid.NewGuid()).Take(_config.NumFiles).ToList();
 
             await _destCleint.CreateIfNotExistsAsync();
 
@@ -50,7 +50,7 @@ namespace CopyFromUrlTest
                 op.Telemetry.Properties.Add("Number of Sources", $"{_sourceClients.Length}");
                 op.Telemetry.Properties.Add("Number of Threads", $"{_config.Threads}");
 
-                foreach (var item in sourceItems)
+                foreach (var item in tempItems)
                 {
                     _slim.Wait();
 
@@ -70,7 +70,7 @@ namespace CopyFromUrlTest
         public async Task CopyBytes(List<SourceItem> sourceItems)
         {
             //shuffle the source lists to level the load on the source accounts
-            sourceItems.OrderBy(x => Guid.NewGuid());
+            var tempItems = sourceItems.OrderBy(x => Guid.NewGuid()).Take(_config.NumFiles).ToList();
 
             await _destCleint.CreateIfNotExistsAsync();
 
@@ -82,7 +82,7 @@ namespace CopyFromUrlTest
                 op.Telemetry.Properties.Add("Number of Sources", $"{_sourceClients.Length}");
                 op.Telemetry.Properties.Add("Number of Threads", $"{_config.Threads}");
 
-                foreach (var item in sourceItems)
+                foreach (var item in tempItems)
                 {
                     _slim.Wait();
 

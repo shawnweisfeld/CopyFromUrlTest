@@ -21,8 +21,9 @@ namespace CopyFromUrlTest
             Host.CreateDefaultBuilder(args)
                 .ConfigureServices((hostContext, services) =>
                 {
-                    services.AddApplicationInsightsTelemetryWorkerService(
-                            hostContext.Configuration["APPINSIGHTS_INSTRUMENTATIONKEY"]);
+                    services
+                    .AddApplicationInsightsTelemetryWorkerService(hostContext.Configuration["APPINSIGHTS_INSTRUMENTATIONKEY"])
+                    .AddApplicationInsightsTelemetryProcessor<DependencyFilter>();
 
                     var config = new Config();
                     hostContext.Configuration.GetSection("Config").Bind(config);
