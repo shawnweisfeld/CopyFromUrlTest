@@ -9,7 +9,7 @@ namespace CopyFromUrlTest
     public class Config
     {
         public string Destination { get; set; }
-
+        public int Threads { get; set; }
         public int MinFileSizeMB { get; set; }
         public int MaxFileSizeMB { get; set; }
         public int NumFiles { get; set; }

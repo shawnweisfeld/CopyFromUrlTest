@@ -31,7 +31,7 @@ namespace CopyFromUrlTest
 
             _sourceClients = _config.Sources.Split("|").Select(x => new BlobContainerClient(x, _config.ContainerName)).ToArray();
             _destCleint = new BlobContainerClient(_config.Destination, _config.ContainerName);
-            _slim = new SemaphoreSlim(Environment.ProcessorCount * _sourceClients.Length);
+            _slim = new SemaphoreSlim(Environment.ProcessorCount * _sourceClients.Length * _config.Threads);
 
         }
 
@@ -48,6 +48,7 @@ namespace CopyFromUrlTest
                 op.Telemetry.Properties.Add("Number of Files", $"{sourceItems.Count}");
                 op.Telemetry.Properties.Add("Number of Cores", $"{Environment.ProcessorCount}");
                 op.Telemetry.Properties.Add("Number of Sources", $"{_sourceClients.Length}");
+                op.Telemetry.Properties.Add("Number of Threads", $"{_config.Threads}");
 
                 foreach (var item in sourceItems)
                 {
@@ -79,6 +80,7 @@ namespace CopyFromUrlTest
                 op.Telemetry.Properties.Add("Number of Files", $"{sourceItems.Count}");
                 op.Telemetry.Properties.Add("Number of Cores", $"{Environment.ProcessorCount}");
                 op.Telemetry.Properties.Add("Number of Sources", $"{_sourceClients.Length}");
+                op.Telemetry.Properties.Add("Number of Threads", $"{_config.Threads}");
 
                 foreach (var item in sourceItems)
                 {
