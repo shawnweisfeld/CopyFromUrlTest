@@ -44,7 +44,7 @@ namespace CopyFromUrlTest
             {
                 var sources = new List<Task<List<SourceItem>>>();
 
-                for (int i = 0; i < _config.Source.Count; i++)
+                for (int i = 0; i < _config.Sources.Split("|").Count(); i++)
                 {
                     sources.Add(GetSourceBlobs(i));
                 }
@@ -58,7 +58,7 @@ namespace CopyFromUrlTest
         private async Task<List<SourceItem>> GetSourceBlobs(int accountIndex)
         {
             var blobs = new List<SourceItem>();
-            BlobContainerClient container = new BlobContainerClient(_config.Source[accountIndex], _config.ContainerName);
+            BlobContainerClient container = new BlobContainerClient(_config.Sources.Split("|")[accountIndex], _config.ContainerName);
 
             //create the container if needed
             await container.CreateIfNotExistsAsync();

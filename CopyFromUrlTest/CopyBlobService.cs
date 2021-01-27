@@ -29,7 +29,7 @@ namespace CopyFromUrlTest
             _telemetryClient = telemetryClient;
             _config = config;
 
-            _sourceClients = _config.Source.Select(x => new BlobContainerClient(x, _config.ContainerName)).ToArray();
+            _sourceClients = _config.Sources.Split("|").Select(x => new BlobContainerClient(x, _config.ContainerName)).ToArray();
             _destCleint = new BlobContainerClient(_config.Destination, _config.ContainerName);
             _slim = new SemaphoreSlim(Environment.ProcessorCount * _sourceClients.Length);
 

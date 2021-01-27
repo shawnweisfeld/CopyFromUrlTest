@@ -8,7 +8,6 @@ namespace CopyFromUrlTest
 {
     public class Config
     {
-        public List<string> Source { get; set; }
         public string Destination { get; set; }
 
         public int MinFileSizeMB { get; set; }

@@ -28,11 +28,6 @@ namespace CopyFromUrlTest
                     hostContext.Configuration.GetSection("Config").Bind(config);
                     config.Run = Guid.NewGuid().ToString();
 
-                    if (config.Source.Contains("list"))
-                    {
-                        config.Source = config.Sources.Split("|").ToList();
-                    }
-
                     services.AddSingleton(config);
 
                     services.AddSingleton<SourceService>();
