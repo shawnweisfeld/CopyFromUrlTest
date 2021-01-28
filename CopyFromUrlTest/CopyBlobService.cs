@@ -55,7 +55,7 @@ namespace CopyFromUrlTest
                     _slim.Wait();
 
                     var fileName = $"{Guid.NewGuid().ToString().Replace("-", "").ToLower()}.obj";
-                    var source = _sourceClients[item.Account].GetBlockBlobClient(item.FileName);
+                    var source = _sourceClients[item.Account].GetBlobClient(item.FileName);
                     var dest = _destCleint.GetBlobClient(fileName);
 
                     _logger.LogInformation($"CopyFromUri {source.Uri.AbsoluteUri} -> {fileName}");
@@ -87,8 +87,8 @@ namespace CopyFromUrlTest
                     _slim.Wait();
 
                     var fileName = $"{Guid.NewGuid().ToString().Replace("-", "").ToLower()}.obj";
-                    var source = _sourceClients[item.Account].GetBlockBlobClient(item.FileName);
-                    var dest = _destCleint.GetBlockBlobClient(fileName);
+                    var source = _sourceClients[item.Account].GetBlobClient(item.FileName);
+                    var dest = _destCleint.GetBlobClient(fileName);
 
                     _logger.LogInformation($"CopyBytes {source.Uri.AbsoluteUri} -> {fileName}");
                     await dest.UploadAsync((await source.DownloadAsync()).Value.Content);
