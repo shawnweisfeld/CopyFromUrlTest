@@ -16,6 +16,7 @@ namespace CopyFromUrlTest
         public string ContainerName { get; set; }
         public string Run { get; set; }
         public string Sources { get; set; }
+        public bool UseFiles { get; set; }
 
     }
 }

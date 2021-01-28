@@ -1,5 +1,8 @@
-﻿using Azure.Storage.Blobs;
+﻿using Azure;
+using Azure.Storage.Blobs;
 using Azure.Storage.Blobs.Models;
+using Azure.Storage.Files.Shares;
+using Azure.Storage.Files.Shares.Models;
 using Microsoft.ApplicationInsights;
 using Microsoft.ApplicationInsights.DataContracts;
 using Microsoft.Extensions.Logging;
@@ -46,7 +49,14 @@ namespace CopyFromUrlTest
 
                 for (int i = 0; i < _config.Sources.Split("|").Count(); i++)
                 {
-                    sources.Add(GetSourceBlobs(i));
+                    if (_config.UseFiles)
+                    {
+                        sources.Add(GetSourceFiles(i));
+                    }
+                    else 
+                    {
+                        sources.Add(GetSourceBlobs(i));
+                    }
                 }
 
                 Task.WaitAll(sources.ToArray());
@@ -75,6 +85,44 @@ namespace CopyFromUrlTest
             {
                 string fileName = $"{Guid.NewGuid().ToString().Replace("-", "").ToLower()}.obj";
                 await container.UploadBlobAsync(fileName, new MemoryStream(_randomBytes.Generate()));
+                blobs.Add(new SourceItem() { Account = accountIndex, FileName = fileName });
+            }
+
+            //return the list of blobs
+            return blobs;
+        }
+
+        private async Task<List<SourceItem>> GetSourceFiles(int accountIndex)
+        {
+            var blobs = new List<SourceItem>();
+
+            ShareClient share = new ShareClient(_config.Sources.Split("|")[accountIndex], _config.ContainerName);
+            await share.CreateIfNotExistsAsync();
+
+            ShareDirectoryClient directory = share.GetDirectoryClient(_config.ContainerName);
+            await directory.CreateIfNotExistsAsync();
+
+            //get all the blobs in the container
+            await foreach (var item in directory.GetFilesAndDirectoriesAsync())
+            {
+                if (!item.IsDirectory)
+                {
+                    blobs.Add(new SourceItem() { Account = accountIndex, FileName = item.Name });
+                }
+            }
+
+            //if the container is empty fill it
+            while (_config.NumFiles > blobs.Count())
+            {
+                string fileName = $"{Guid.NewGuid().ToString().Replace("-", "").ToLower()}.obj";
+                var file = directory.GetFileClient(fileName);
+                using (MemoryStream stream = new MemoryStream(_randomBytes.Generate()))
+                {
+                    await file.CreateAsync(stream.Length);
+                    await file.UploadRangeAsync(
+                        new HttpRange(0, stream.Length),
+                        stream);
+                }
                 blobs.Add(new SourceItem() { Account = accountIndex, FileName = fileName });
             }
 

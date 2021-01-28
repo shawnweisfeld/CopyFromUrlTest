@@ -1,5 +1,7 @@
 ﻿using Azure.Storage.Blobs;
 using Azure.Storage.Blobs.Specialized;
+using Azure.Storage.Files.Shares;
+using Azure.Storage.Sas;
 using Microsoft.ApplicationInsights;
 using Microsoft.ApplicationInsights.DataContracts;
 using Microsoft.Extensions.Logging;
@@ -17,7 +19,10 @@ namespace CopyFromUrlTest
         private readonly ILogger<CopyBlobService> _logger;
         private TelemetryClient _telemetryClient;
         private Config _config;
-        private BlobContainerClient[] _sourceClients;
+        private BlobContainerClient[] _sourceBlobClients;
+        private ShareDirectoryClient[] _sourceFileClients;
+        private string[] _sources;
+        private Uri[] _sourceFileSas;
         private BlobContainerClient _destCleint;
         private readonly SemaphoreSlim _slim;
 
@@ -28,10 +33,21 @@ namespace CopyFromUrlTest
             _logger = logger;
             _telemetryClient = telemetryClient;
             _config = config;
+            _sources = _config.Sources.Split("|");
 
-            _sourceClients = _config.Sources.Split("|").Select(x => new BlobContainerClient(x, _config.ContainerName)).ToArray();
+            if (_config.UseFiles)
+            {
+                _sourceFileClients = _sources.Select(x => new ShareDirectoryClient(x, _config.ContainerName, _config.ContainerName)).ToArray();
+                _sourceFileSas = _sources.Select(x => new ShareClient(x, _config.ContainerName))
+                            .Select(x => x.GenerateSasUri(ShareSasPermissions.Read, DateTimeOffset.Now.AddYears(1))).ToArray();
+            }
+            else
+            {
+                _sourceBlobClients = _sources.Select(x => new BlobContainerClient(x, _config.ContainerName)).ToArray();
+            }
+
             _destCleint = new BlobContainerClient(_config.Destination, _config.ContainerName);
-            _slim = new SemaphoreSlim(Environment.ProcessorCount * _sourceClients.Length * _config.Threads);
+            _slim = new SemaphoreSlim(Environment.ProcessorCount * _sources.Length * _config.Threads);
 
         }
 
@@ -45,9 +61,10 @@ namespace CopyFromUrlTest
             using (var op = _telemetryClient.StartOperation<DependencyTelemetry>("CopyFromUri"))
             {
                 op.Telemetry.Properties.Add("Run", _config.Run);
+                op.Telemetry.Properties.Add("File Source", $"{_config.UseFiles}");
                 op.Telemetry.Properties.Add("Number of Files", $"{tempItems.Count}");
                 op.Telemetry.Properties.Add("Number of Cores", $"{Environment.ProcessorCount}");
-                op.Telemetry.Properties.Add("Number of Sources", $"{_sourceClients.Length}");
+                op.Telemetry.Properties.Add("Number of Sources", $"{_sources.Length}");
                 op.Telemetry.Properties.Add("Number of Threads", $"{_config.Threads}");
 
                 foreach (var item in tempItems)
@@ -55,11 +72,21 @@ namespace CopyFromUrlTest
                     _slim.Wait();
 
                     var fileName = $"{Guid.NewGuid().ToString().Replace("-", "").ToLower()}.obj";
-                    var source = _sourceClients[item.Account].GetBlobClient(item.FileName);
                     var dest = _destCleint.GetBlobClient(fileName);
 
-                    _logger.LogInformation($"CopyFromUri {source.Uri.AbsoluteUri} -> {fileName}");
-                    await dest.SyncCopyFromUriAsync(source.Uri);
+                    if (_config.UseFiles)
+                    {
+                        var sas = _sourceFileSas[item.Account];
+                        var source = new UriBuilder(sas.Scheme, sas.Host, sas.Port, $"{sas.AbsolutePath}/{_config.ContainerName}/{item.FileName}", sas.Query);
+                        _logger.LogInformation($"CopyFromUri {source.Uri.AbsoluteUri} -> {fileName}");
+                        await dest.SyncCopyFromUriAsync(source.Uri);
+                    }
+                    else
+                    {
+                        var source = _sourceBlobClients[item.Account].GetBlobClient(item.FileName);
+                        _logger.LogInformation($"CopyFromUri {source.Uri.AbsoluteUri} -> {fileName}");
+                        await dest.SyncCopyFromUriAsync(source.Uri);
+                    }
 
                     _slim.Release();
                 }
@@ -77,9 +104,10 @@ namespace CopyFromUrlTest
             using (var op = _telemetryClient.StartOperation<DependencyTelemetry>("CopyBytes"))
             {
                 op.Telemetry.Properties.Add("Run", _config.Run);
+                op.Telemetry.Properties.Add("File Source", $"{_config.UseFiles}");
                 op.Telemetry.Properties.Add("Number of Files", $"{tempItems.Count}");
                 op.Telemetry.Properties.Add("Number of Cores", $"{Environment.ProcessorCount}");
-                op.Telemetry.Properties.Add("Number of Sources", $"{_sourceClients.Length}");
+                op.Telemetry.Properties.Add("Number of Sources", $"{_sources.Length}");
                 op.Telemetry.Properties.Add("Number of Threads", $"{_config.Threads}");
 
                 foreach (var item in tempItems)
@@ -87,11 +115,20 @@ namespace CopyFromUrlTest
                     _slim.Wait();
 
                     var fileName = $"{Guid.NewGuid().ToString().Replace("-", "").ToLower()}.obj";
-                    var source = _sourceClients[item.Account].GetBlobClient(item.FileName);
                     var dest = _destCleint.GetBlobClient(fileName);
 
-                    _logger.LogInformation($"CopyBytes {source.Uri.AbsoluteUri} -> {fileName}");
-                    await dest.UploadAsync((await source.DownloadAsync()).Value.Content);
+                    if (_config.UseFiles)
+                    {
+                        var source = _sourceFileClients[item.Account].GetFileClient(item.FileName);
+                        _logger.LogInformation($"CopyBytes {source.Uri.AbsoluteUri} -> {fileName}");
+                        await dest.UploadAsync((await source.DownloadAsync()).Value.Content);
+                    }
+                    else
+                    {
+                        var source = _sourceBlobClients[item.Account].GetBlobClient(item.FileName);
+                        _logger.LogInformation($"CopyBytes {source.Uri.AbsoluteUri} -> {fileName}");
+                        await dest.UploadAsync((await source.DownloadAsync()).Value.Content);
+                    }
 
                     _slim.Release();
                 }
