@@ -56,7 +56,7 @@ namespace CopyFromUrlTest
 
                     var fileName = $"{Guid.NewGuid().ToString().Replace("-", "").ToLower()}.obj";
                     var source = _sourceClients[item.Account].GetBlockBlobClient(item.FileName);
-                    var dest = _destCleint.GetBlockBlobClient(fileName);
+                    var dest = _destCleint.GetBlobClient(fileName);
 
                     _logger.LogInformation($"CopyFromUri {source.Uri.AbsoluteUri} -> {fileName}");
                     await dest.SyncCopyFromUriAsync(source.Uri);
