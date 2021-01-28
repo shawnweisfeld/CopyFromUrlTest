@@ -26,6 +26,7 @@ namespace CopyFromUrlTest
             if (dependencyTelemetry != null
                 && dependencyTelemetry.Type != null
                 && (dependencyTelemetry.Type == "Azure blob"
+                    || dependencyTelemetry.Type == "HTTP"
                     || dependencyTelemetry.Type == "InProc | Microsoft.Storage"))
             {
                 return;
