@@ -42,11 +42,15 @@ namespace CopyFromUrlTest
 
             try
             {
-                var todo = _setupService.GetSourceBlobs();
-
-                await _copyBlobService.CopyFromUri(todo);
-                await _copyBlobService.CopyBytes(todo);
-
+                if (_config.LoadMode)
+                {
+                    await _setupService.CreateBlobsAsync();
+                }
+                else
+                {
+                    var todo = await _setupService.GetSourceBlobs();
+                    await _copyBlobService.CopyFromUri(todo);
+                }
             }
             catch (OperationCanceledException)
             {

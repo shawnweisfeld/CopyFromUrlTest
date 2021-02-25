@@ -34,101 +34,46 @@ namespace CopyFromUrlTest
 
             _randomBytes = RandomizerFactory.GetRandomizer(new FieldOptionsBytes()
             {
-                Min = (int)Math.Pow(2, 20) * _config.MinFileSizeMB,
-                Max = (int)Math.Pow(2, 20) * _config.MaxFileSizeMB
+                Min = (int)(Math.Pow(2, 20) * _config.FileSizeMB),
+                Max = (int)(Math.Pow(2, 20) * _config.FileSizeMB)
             });
         }
 
 
 
-        public List<SourceItem> GetSourceBlobs()
+        public async Task CreateBlobsAsync()
         {
-            using (_telemetryClient.StartOperation<DependencyTelemetry>("Get Source Blobs"))
+            using (_telemetryClient.StartOperation<DependencyTelemetry>("CreateBlobsAsync"))
             {
-                var sources = new List<Task<List<SourceItem>>>();
+                BlobContainerClient container = new BlobContainerClient(_config.Source, _config.ContainerName);
 
-                for (int i = 0; i < _config.Sources.Split("|").Count(); i++)
+                //create the container if needed
+                await container.CreateIfNotExistsAsync();
+                await container.SetAccessPolicyAsync(PublicAccessType.Blob);
+
+                for (int i = 0; i < _config.NumFiles; i++)
                 {
-                    if (_config.UseFiles)
-                    {
-                        sources.Add(GetSourceFiles(i));
-                    }
-                    else 
-                    {
-                        sources.Add(GetSourceBlobs(i));
-                    }
+                    string fileName = $"{Guid.NewGuid().ToString().Replace("-", "").ToLower()}.obj";
+                    await container.UploadBlobAsync(fileName, new MemoryStream(_randomBytes.Generate()));
                 }
-
-                Task.WaitAll(sources.ToArray());
-
-                return sources.Select(x => x.Result).SelectMany(x => x).ToList();
             }
         }
 
-        private async Task<List<SourceItem>> GetSourceBlobs(int accountIndex)
+        public async Task<List<string>> GetSourceBlobs()
         {
-            var blobs = new List<SourceItem>();
-            BlobContainerClient container = new BlobContainerClient(_config.Sources.Split("|")[accountIndex], _config.ContainerName);
-
-            //create the container if needed
-            await container.CreateIfNotExistsAsync();
-            await container.SetAccessPolicyAsync(PublicAccessType.Blob);
+            var blobs = new List<string>();
+            BlobContainerClient container = new BlobContainerClient(_config.Source, _config.ContainerName);
 
             //get all the blobs in the container
             await foreach (var item in container.GetBlobsAsync())
             {
-                blobs.Add(new SourceItem() {Account = accountIndex, FileName = item.Name });
-            }
-
-            //if the container is empty fill it
-            while (_config.NumFiles > blobs.Count())
-            {
-                string fileName = $"{Guid.NewGuid().ToString().Replace("-", "").ToLower()}.obj";
-                await container.UploadBlobAsync(fileName, new MemoryStream(_randomBytes.Generate()));
-                blobs.Add(new SourceItem() { Account = accountIndex, FileName = fileName });
+                blobs.Add(item.Name);
             }
 
             //return the list of blobs
             return blobs;
         }
 
-        private async Task<List<SourceItem>> GetSourceFiles(int accountIndex)
-        {
-            var blobs = new List<SourceItem>();
-
-            ShareClient share = new ShareClient(_config.Sources.Split("|")[accountIndex], _config.ContainerName);
-            await share.CreateIfNotExistsAsync();
-
-            ShareDirectoryClient directory = share.GetDirectoryClient(_config.ContainerName);
-            await directory.CreateIfNotExistsAsync();
-
-            //get all the blobs in the container
-            await foreach (var item in directory.GetFilesAndDirectoriesAsync())
-            {
-                if (!item.IsDirectory)
-                {
-                    blobs.Add(new SourceItem() { Account = accountIndex, FileName = item.Name });
-                }
-            }
-
-            //if the container is empty fill it
-            while (_config.NumFiles > blobs.Count())
-            {
-                string fileName = $"{Guid.NewGuid().ToString().Replace("-", "").ToLower()}.obj";
-                var file = directory.GetFileClient(fileName);
-                using (MemoryStream stream = new MemoryStream(_randomBytes.Generate()))
-                {
-                    await file.CreateAsync(stream.Length);
-                    await file.UploadRangeAsync(
-                        new HttpRange(0, stream.Length),
-                        stream);
-                }
-                blobs.Add(new SourceItem() { Account = accountIndex, FileName = fileName });
-            }
-
-            //return the list of blobs
-            return blobs;
-        }
 
     }
 }
