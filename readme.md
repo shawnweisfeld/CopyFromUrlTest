@@ -5,12 +5,6 @@ Test harness to test the performance of copying from a RA-GRS Secondary to a pri
 ## Script to start the container
 
 ``` bash
-(Get-AzStorageAccount -ResourceGroupName sqldwtest -Name sweisfelaegpv1 -IncludeGeoReplicationStats).GeoReplicationStats.LastSyncTime
-
-
-
-
-
 for number in {1..50}
 do
 az container create \
