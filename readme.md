@@ -15,48 +15,52 @@ Use this method to do an async copy, this uses a low priority thread on the stor
 ## Script to start the container
 
 ``` bash
+(Get-AzStorageAccount -ResourceGroupName sqldwtest -Name sweisfelaegpv1 -IncludeGeoReplicationStats).GeoReplicationStats.LastSyncTime
+
+
+
+
+
 for number in {1..50}
 do
 az container create \
-    --name "copyfromurltestb$number" \
-    --resource-group "copyblobfromurl" \
-    --location southcentralus \
-    --cpu 2 \
-    --memory 4 \
-    --image "sweisfel/copyfromurltest:latest" \
+    --name copyfromurltestsec$number\
+    --resource-group "rg" \
+    --location southeastasia \
+    --cpu 4 \
+    --memory 8 \
+    --image "sweisfel/copyfromurltestsec:latest" \
     --restart-policy Never \
     --no-wait \
     --environment-variables \
         APPINSIGHTS_INSTRUMENTATIONKEY="key" \
-        Config__Sources="DefaultEndpointsProtocol=https;AccountName=src01;AccountKey=key;EndpointSuffix=core.windows.net|DefaultEndpointsProtocol=https;AccountName=src02;AccountKey=key;EndpointSuffix=core.windows.net|DefaultEndpointsProtocol=https;AccountName=src03;AccountKey=key;EndpointSuffix=core.windows.net" \
-        Config__Destination="DefaultEndpointsProtocol=https;AccountName=dest;AccountKey=key;EndpointSuffix=core.windows.net" \
-        Config__MinFileSizeMB="1" \
-        Config__MaxFileSizeMB="5" \
-        Config__NumFiles="100" \
-        Config__ContainerName="test3" \
-        Config__Threads="2" \
-        Config__UseFiles="true"
+        Config__Source="connection string" \
+        Config__Destination="connection string" \
+        Config__FileSizeMB="0.23" \
+        Config__NumFiles="10000" \
+        Config__ContainerName="test" \
+        Config__Threads="10" \
+        Config__LoadMode="false"
 done
 
 
 ----
 az container create \
-    --name "copyfromurltest" \
-    --resource-group "copyblobfromurl" \
-    --location southcentralus \
+    --name copyfromurltestseca\
+    --resource-group "rg" \
+    --location southeastasia \
     --cpu 2 \
     --memory 4 \
-    --image "sweisfel/copyfromurltest:latest" \
+    --image "sweisfel/copyfromurltestsec:latest" \
     --restart-policy Never \
     --no-wait \
     --environment-variables \
         APPINSIGHTS_INSTRUMENTATIONKEY="key" \
-        Config__Sources="DefaultEndpointsProtocol=https;AccountName=src01;AccountKey=key;EndpointSuffix=core.windows.net|DefaultEndpointsProtocol=https;AccountName=src02;AccountKey=key;EndpointSuffix=core.windows.net|DefaultEndpointsProtocol=https;AccountName=src03;AccountKey=key;EndpointSuffix=core.windows.net" \
-        Config__Destination="DefaultEndpointsProtocol=https;AccountName=dest;AccountKey=key;EndpointSuffix=core.windows.net" \
-        Config__MinFileSizeMB="1" \
-        Config__MaxFileSizeMB="5" \
-        Config__NumFiles="5000" \
-        Config__ContainerName="test3" \
+        Config__Source="connection string" \
+        Config__Destination="connection string" \
+        Config__FileSizeMB="0.23" \
+        Config__NumFiles="5" \
+        Config__ContainerName="test" \
         Config__Threads="2" \
-        Config__UseFiles="true"
+        Config__LoadMode="true"
 ```
