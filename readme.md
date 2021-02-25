@@ -1,16 +1,6 @@
 # Copy from URL Test
 
-Test harness to compare the performance between SyncCopyFromUri and download/upload. 
-
-From Blob to Blob and from Files to Blob.
-
-Note there are two way to do server side copies in Azure Storage. Sync and Async.
-
-Use this method to do a sync copy, this uses a high priority thread on the storage server to do the copy. **We use this in the sample.**
-[BlobBaseClient.SyncCopyFromUriAsync](https://docs.microsoft.com/en-us/dotnet/api/azure.storage.blobs.specialized.blobbaseclient.synccopyfromuriasync?view=azure-dotnet)
-
-Use this method to do an async copy, this uses a low priority thread on the storage server to do the copy.
-[BlobBaseClient.StartCopyFromUriAsync](https://docs.microsoft.com/en-us/dotnet/api/azure.storage.blobs.specialized.blobbaseclient.startcopyfromuriasync?view=azure-dotnet)
+Test harness to test the performance of copying from a RA-GRS Secondary to a primary
 
 ## Script to start the container
 
